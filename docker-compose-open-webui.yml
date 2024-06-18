@@ -1,0 +1,58 @@
+version: '3.3'
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: talkdai
+      POSTGRES_PASSWORD: talkdai
+      POSTGRES_DB: talkdai
+    volumes:
+       - ./data/db:/var/lib/postgresql/data
+       - ./psql/db-ext-vector.sql:/docker-entrypoint-initdb.d/db-ext-vector.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "talkdai", "-U", "talkdai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  dialog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app
+      - ./.empty:/app/data/db
+      - ./static:/app/static
+      # - ./sample_data:/app/src/sample_data
+    ports:
+      - '8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://talkdai:talkdai@db:5432/talkdai
+      - STATIC_FILE_LOCATION=/app/static
+    env_file:
+      - .env
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - '3000:8080'
+    environment:
+      - OPENAI_API_KEY=
+      - OPENAI_API_BASE_URLS=http://dialog:8000/openai;
+      - ENABLE_OPENAI_API=true
+    volumes:
+      - open-webui:/app/backend/data
+    depends_on:
+      db:
+        condition: service_healthy
+      dialog:
+        condition: service_started
+
+volumes:
+  open-webui:

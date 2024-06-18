@@ -1,0 +1,32 @@
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    restart: always
+    ports:
+      - '5432:5432'
+    volumes:
+       - ./etc/db-ext-vector-test.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_USER: talkdai
+      POSTGRES_PASSWORD: talkdai
+      POSTGRES_DB: test_talkdai
+      POSTGRES_EXTENSIONS: vector
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "test_talkdai", "-U", "talkdai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  dialog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: /app/etc/run-tests.sh
+    stdin_open: true
+    tty: true
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./src/tests/.env.testing
+    volumes:
+      - ./src/tests/:/app/src/tests/

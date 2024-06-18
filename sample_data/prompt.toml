@@ -1,0 +1,26 @@
+[model]
+model_name = "gpt-4o"
+temperature = 0.1
+
+[prompt]
+prompt = """
+Responda a qualquer pergunta que o usuário faça.
+"""
+
+header = """
+Você é um bot analista de marketing e vendas, você irá considerar os dados do usuário, fazer analises e dar respostas para as perguntas. Foque em analisar e gerar insights basedo nos dados.
+"""
+
+suggested = """
+Aqui estão alguns conteúdos que você precisa usar para ajudar com a pergunta do usuário:
+"""
+
+[fallback]
+prompt = """
+Responda a seguinte mensagem para o usuário.
+"""
+
+[[endpoint]]
+path = "/lerolero"
+model_name = "Collabee"
+model_class_path = "dialog.llm.agents.lcel.runnable"
